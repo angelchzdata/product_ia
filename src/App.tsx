@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 
+// --- Constantes para la Solicitud POST del Agente ---
+const AGENT_QUERY_URL = 'https://njkq22m4-8000.brs.devtunnels.ms/agent/query';
+// NOTA: Esta cookie se incluye tal cual para replicar la solicitud curl,
+// pero ten en cuenta que las cookies de sesión/túnel pueden expirar rápidamente.
+const COOKIE_HEADER_VALUE = '.Tunnels.Relay.WebForwarding.Cookies=CfDJ8Cs4yarcs6pKkdu0hlKHsZvozDUB_o8AXchVfI_lLgdIBk_30Lx_WWI4ttg5q3A07-PhsMquiqqFTnv769hjQl6uMuT49tAkLePlvpiEXM68VYzXMeb31twXn87XE7pmhrPBAEa6aCn30vQVJ-kLypeVTDW1Qg81bPzCwvlP-Eoq0jYb6G7F512q5F9BYWENUZfAcbHNRf7xQakLsM-CwI1AoTEYS79MwCeWdg6FLdhWJ87GgYrjKrCI-7Cat_fygwbcA7IV03Wspj1VtSiEFW7FsIPd7u68rygx_OBVmKSq8CFAIokONyyqot0xfHgTQg3ZVQ3WTXf-feSKD6Ik4r9gLvuzKOxRBSvJ7xr8u8hHpQo-vLf7cGuwQSv-gQyPQWOMPV8LswfVhCbN3rNGsHCpLO1oxTvHE66YjlvDd_fJTie5bNvxU59IUDZn5C2g78GhzXmFMjahgsPO8iJfDxpiZBUPW2mc3MW1VJQjg7SGiG4B2IdhdxKnjcdEi8wBqzt3qrIkqiVgm4mwSylsYbcn1UQGOLAKn7cOrAR5_oC5ABSD6jbJJ8VN7udKiYjWxZgd3q3wqBsXCnHFtXMSvGak6eAQ1qWPL-iS-BZbKoCFG4Wo4YfhrVIGUa0Fw-lEbGhiuCTC0eB6HKsKIGvqmwBkrxJcfKIngMKaKOn60dM16hxBaa8LSWQ5Q41bjNmN-sGBJnPT1mK6XcoZsYMGzoNEnz_RjArdyCr5aZLtYAqLLAiIuE-foCjBpAZ9F-OxxsSbW6Gs_jYsH4qlZ7YLV7yMSz874U9MCBkzyQmp2clv08Ula9Fl05JPih70MQF5UP9BVkNk4wy0NDf5wZkVG6W6eSyfPAIw-v4gIkZgyh5AgVudNcpGU9OkFzRQK_94SihxMxgnrVeu9eyYymrpZkipW43ElNRnWiVZMoh_ZGIa';
+// --- Fin de Constantes ---
+
+
 interface Message {
   id: number;
   type: 'user' | 'system' | 'error';
