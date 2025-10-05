@@ -22,57 +22,83 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!inputUrl.trim()) return;
+  // --- Fixed Request Details ---
+  // The URL for the agent query (you might need to store this in a constant or environment variable)
+  const AGENT_QUERY_URL = 'https://njkq22m4-8000.brs.devtunnels.ms/agent/query';
+  
+  // The product URL you want to query (this would typically come from an input, 
+  // but for the exact curl request, it's hardcoded here)
+  const productUrl = 'https://sodimac.falabella.com.pe/sodimac-pe/product/114860132/Ropero-6-Puertas-1-Cajones-1-Zapatera/114863002';
+  
+  // The value of the 'Cookie' header from your curl request (NOTE: Cookies are often sensitive 
+  // and might expire or be tied to a specific session/tunnel. Hardcoding them is generally not recommended 
+  // for production code, but is necessary to replicate your curl exactly.)
+  const COOKIE_HEADER_VALUE = '.Tunnels.Relay.WebForwarding.Cookies=CfDJ8Cs4yarcs6pKkdu0hlKHsZvozDUB_o8AXchVfI_lLgdIBk_30Lx_WWI4ttg5q3A07-PhsMquiqqFTnv769hjQl6uMuT49tAkLePlvpiEXM68VYzXMeb31twXn87XE7pmhrPBAEa6aCn30vQVJ-kLypeVTDW1Qg81bPzCwvlP-Eoq0jYb6G7F512q5F9BYWENUZfAcbHNRf7xQakLsM-CwI1AoTEYS79MwCeWdg6FLdhWJ87GgYrjKrCI-7Cat_fygwbcA7IV03Wspj1VtSiEFW7FsIPd7u68rygx_OBVmKSq8CFAIokONyyqot0xfHgTQg3ZVQ3WTXf-feSKD6Ik4r9gLvuzKOxRBSvJ7xr8u8hHpQo-vLf7cGuwQSv-gQyPQWOMPV8LswfVhCbN3rNGsHCpLO1oxTvHE66YjlvDd_fJTie5bNvxU59IUDZn5C2g78GhzXmFMjahgsPO8iJfDxpiZBUPW2mc3MW1VJQjg7SGiG4B2IdhdxKnjcdEi8wBqzt3qrIkqiVgm4mwSylsYbcn1UQGOLAKn7cOrAR5_oC5ABSD6jbJJ8VN7udKiYjWxZgd3q3wqBsXCnHFtXMSvGak6eAQ1qWPL-iS-BZbKoCFG4Wo4YfhrVIGUa0Fw-lEbGhiuCTC0eB6HKsKIGvqmwBkrxJcfKIngMKaKOn60dM16hxBaa8LSWQ5Q41bjNmN-sGBJnPT1mK6XcoZsYMGzoNEnz_RjArdyCr5aZLtYAqLLAiIuE-foCjBpAZ9F-OxxsSbW6Gs_jYsH4qlZ7YLV7yMSz874U9MCBkzyQmp2clv08Ula9Fl05JPih70MQF5UP9BVkNk4wy0NDf5wZkVG6W6eSyfPAIw-v4gIkZgyh5AgVudNcpGU9OkFzRQK_94SihxMxgnrVeu9eyYymrpZkipW43ElNRnWiVZMoh_ZGIa';
+  // -----------------------------
 
-    const userMessage: Message = {
-      id: Date.now(),
-      type: 'user',
-      content: inputUrl,
+  // If you want to use the current inputUrl for the *display* but the fixed URL for the *request*
+  const userMessage: Message = {
+    id: Date.now(),
+    type: 'user',
+    // Display the specific product URL being queried, not the API endpoint
+    content: productUrl, 
+    timestamp: new Date()
+  };
+
+  setMessages(prev => [...prev, userMessage]);
+  setInputUrl(''); // Clear the displayed input field
+  setIsLoading(true);
+
+  try {
+    const response = await fetch(AGENT_QUERY_URL, {
+      method: 'POST', // Specify the method as POST
+      headers: {
+        'Content-Type': 'application/json',
+        // Include the Cookie header
+        'Cookie': COOKIE_HEADER_VALUE, 
+      },
+      // Include the JSON body, stringified
+      body: JSON.stringify({
+        product_url: productUrl 
+      }),
+    });
+
+    if (!response.ok) {
+      // Improved error message to show the response text if available
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 100)}...`);
+    }
+
+    const data = await response.json();
+
+    if (!data.message) {
+      throw new Error('La respuesta no contiene la propiedad "message"');
+    }
+
+    const systemMessage: Message = {
+      id: Date.now() + 1,
+      type: 'system',
+      content: data.message,
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputUrl('');
-    setIsLoading(true);
+    setMessages(prev => [...prev, systemMessage]);
+  } catch (error) {
+    const errorMessage: Message = {
+      id: Date.now() + 1,
+      type: 'error',
+      content: `Error: No se pudo completar la solicitud. ${error instanceof Error ? error.message : 'Verifica la URL.'}`,
+      timestamp: new Date()
+    };
 
-    try {
-      const response = await fetch(inputUrl);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.message) {
-        throw new Error('La respuesta no contiene la propiedad "message"');
-      }
-
-      const systemMessage: Message = {
-        id: Date.now() + 1,
-        type: 'system',
-        content: data.message,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, systemMessage]);
-    } catch (error) {
-      const errorMessage: Message = {
-        id: Date.now() + 1,
-        type: 'error',
-        content: `Error: No se pudo completar la solicitud. ${error instanceof Error ? error.message : 'Verifica la URL.'}`,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+    setMessages(prev => [...prev, errorMessage]);
+  } finally {
+    setIsLoading(false);
+  }
+};
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       <header className="bg-white border-b border-slate-200 px-4 py-4 shadow-sm">
